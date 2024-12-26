@@ -15,7 +15,7 @@ import { ConfigModule } from '@nestjs/config';
     ShellModule,
     TypeOrmModule.forRoot({
       type: 'sqlite', // Database type
-      database: '../database/database.sqlite', // SQLite file
+      database: 'database/database.sqlite', // SQLite file
       entities: [__dirname + '/**/*.entity{.ts,.js}'], // Path to entities
       synchronize: true, // Auto-create database schema
     }),
