@@ -23,6 +23,11 @@ export class HydraMainController {
     return 'This route uses a wildcard';
   }
 
+  @Get('node-info')
+  getCardanoNodeInfo() {
+    return this.hydraMainService.getCardanoNodeInfo();
+  }
+
   @UseInterceptors(ClassSerializerInterceptor)
   @Get('list-account')
   getListAccount() {

@@ -32,7 +32,7 @@ export class HydraMainService implements OnModuleInit {
   private docker: Docker;
   private CONSTANTS = {
     cardanoNodeServiceName: 'cardano-node',
-    cardanoNodeImage: 'ghcr.io/intersectmbo/cardano-node:10.1.2',
+    cardanoNodeImage: 'ghcr.io/intersectmbo/cardano-node:10.1.4',
     cardanoNodeFolder: '/Users/macbookpro/hdev/workspaces/blockchain/hydra-manager/cardano-node',
     cardanoNodeSocketPath:
       '/Users/macbookpro/hdev/workspaces/blockchain/hydra-manager/cardano-node/node.socket',
@@ -122,7 +122,6 @@ export class HydraMainService implements OnModuleInit {
       this.cardanoNode.container = container;
     }
     this.cardanoNode.container = this.docker.getContainer(cardanoNodeContainer.Id);
-
     const output = await this.execInContainer(this.CONSTANTS.cardanoNodeServiceName, [
       'cardano-cli',
       'query',
@@ -143,6 +142,49 @@ export class HydraMainService implements OnModuleInit {
     }
 
     return;
+  }
+
+  async cardanoQueryTip() {
+    const output = await this.execInContainer(this.CONSTANTS.cardanoNodeServiceName, [
+      'cardano-cli',
+      'query',
+      'tip',
+      `--socket-path`,
+      `/workspace/node.socket`,
+      '--testnet-magic',
+      '1',
+    ]);
+    try {
+      const tip = JSON.parse(this.cleanJSON(output));
+      this.cardanoNode.tip = tip;
+    } catch (err) {
+      console.log(`Error parse json`, err);
+    }
+    return this.cardanoNode.tip;
+  }
+
+  async getCardanoNodeInfo() {
+    const cardanoCli = new CardanoCliJs({
+      cliPath: `docker exec cardano-node cardano-cli`,
+      dir: `/workspace`,
+      era: '',
+      network: '1',
+      socketPath: '/workspace/node.socket',
+      shelleyGenesis: '/workspace/shelley-genesis.json',
+    });
+    const output = await cardanoCli.runCommand({
+      command: 'query',
+      subcommand: 'protocol-parameters',
+      parameters: [
+        { name: 'socket-path', value: '/workspace/node.socket' },
+        { name: 'testnet-magic', value: '1' },
+      ],
+    });
+    const protocolParameters = JSON.parse(Buffer.from(output).toString());
+    return {
+      tip: this.cardanoNode.tip,
+      protocolParameters,
+    };
   }
 
   async cardanoCliQueryUtxo(address: string) {
