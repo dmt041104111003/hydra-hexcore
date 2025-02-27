@@ -28,19 +28,26 @@ import axios from 'axios';
 
 @Injectable()
 export class HydraMainService implements OnModuleInit {
-  HYDRA_BIN_DIR_PATH = '/Users/macbookpro/hdev/workspaces/blockchain/hydra-manager/hydra/bin';
-  // PARTY_DIR_PATH = '/Users/macbookpro/hdev/workspaces/blockchain/hydra-manager/hydra/preprod';
+  HYDRA_BIN_DIR_PATH =
+    process.env.NEST_HYDRA_BIN_DIR_PATH ||
+    '/Users/macbookpro/hdev/workspaces/blockchain/hydra-manager/hydra/bin';
 
   private docker: Docker;
   private CONSTANTS = {
-    cardanoNodeServiceName: 'cardano-node',
-    cardanoNodeImage: 'ghcr.io/intersectmbo/cardano-node:10.1.4',
-    cardanoNodeFolder: '/Users/macbookpro/hdev/workspaces/blockchain/hydra-manager/cardano-node',
+    cardanoNodeServiceName: process.env.NEST_CARDANO_NODE_SERVICE_NAME || 'cardano-node',
+    cardanoNodeImage:
+      process.env.NEST_CARDANO_NODE_IMAGE || 'ghcr.io/intersectmbo/cardano-node:10.1.4',
+    cardanoNodeFolder:
+      process.env.NEST_CARDANO_NODE_FOLDER ||
+      '/Users/macbookpro/hdev/workspaces/blockchain/hydra-manager/cardano-node',
     cardanoNodeSocketPath:
+      process.env.NEST_CARDANO_NODE_SOCKER_PATH ||
       '/Users/macbookpro/hdev/workspaces/blockchain/hydra-manager/cardano-node/node.socket',
-
-    hydraNodeImage: 'ghcr.io/cardano-scaling/hydra-node:0.19.0',
-    hydraNodeFolder: '/Users/macbookpro/hdev/workspaces/blockchain/hydra-manager/hydra/preprod',
+    hydraNodeImage:
+      process.env.NEST_HYDRA_NODE_IMAGE || 'ghcr.io/cardano-scaling/hydra-node:0.19.0',
+    hydraNodeFolder:
+      process.env.NEST_HYDRA_NODE_FOLDER ||
+      '/Users/macbookpro/hdev/workspaces/blockchain/hydra-manager/hydra/preprod',
   };
 
   private cardanoNode = {
@@ -67,11 +74,13 @@ export class HydraMainService implements OnModuleInit {
     @InjectRepository(HydraParty)
     private hydraPartyRepository: Repository<HydraParty>,
   ) {
-    this.docker = new Docker({ socketPath: '/var/run/docker.sock' });
+    const DOCKER_SOCKET = process.env.NEST_DOCKER_SOCKET_PATH || '/var/run/docker.sock';
+    this.docker = new Docker({ socketPath: DOCKER_SOCKET });
   }
 
   async onModuleInit() {
     console.log('onModuleInit');
+    console.log('[LOAD ENVs]', this.CONSTANTS);
     const listContainers = await this.docker.listContainers({ all: true });
 
     const cardanoNodeContainer = listContainers.find(

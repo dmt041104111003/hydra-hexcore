@@ -1,0 +1,30 @@
+services:
+  hydra-hexcore:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hydra-hexcore
+    volumes:
+      - ./database:/database # Persistent volume for the database
+      - /Users/macbookpro/hdev/workspaces/blockchain/hydra-manager/hydra:/hydra
+      - /Users/macbookpro/hdev/workspaces/blockchain/hydra-manager/cardano-node:/cardano-node
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - '3010:3010' # Expose port 3010
+    environment:
+      NODE_ENV: production
+      PORT: 3010
+      NEST_HYDRA_BIN_DIR_PATH: /hydra/bin
+      NEST_HYDRA_NODE_FOLDER: /hydra/preprod
+      NEST_HYDRA_NODE_IMAGE: ghcr.io/cardano-scaling/hydra-node:0.19.0
+      NEST_CARDANO_NODE_SERVICE_NAME: cardano-node
+      NEST_CARDANO_NODE_IMAGE: ghcr.io/intersectmbo/cardano-node:10.1.4
+      NEST_CARDANO_NODE_FOLDER: /cardano-node
+      NEST_CARDANO_NODE_SOCKER_PATH: /cardano-node/node.socket
+      NEST_DOCKER_SOCKET_PATH: /var/run/docker.sock
+    command: ['node', 'dist/main']
+    restart: unless-stopped
+
+volumes:
+  db:
+    driver: local
