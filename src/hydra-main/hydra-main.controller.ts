@@ -13,6 +13,7 @@ import { validateMnemonic } from 'bip39';
 import { CreatePartyDto } from './dto/create-party.dto';
 import { CreateHydraNodeDto } from './dto/create-hydra-node.dto';
 import { ReqActivePartyDto } from './dto/request/active-party.dto';
+import { CommitHydraDto } from './dto/request/commit-hydra.dto';
 
 @Controller('hydra-main')
 export class HydraMainController {
@@ -68,5 +69,10 @@ export class HydraMainController {
   activeHydraParty(@Body() activePartyDto: ReqActivePartyDto) {
     // res.status(HttpStatus.OK).json(this.hydraMainService.createAccount(createAccountDto));
     return this.hydraMainService.activeHydraParty(activePartyDto);
+  }
+
+  @Post('commit-node')
+  commitToHydraNode(@Body() commitHydraDto: CommitHydraDto) {
+    return this.hydraMainService.commitToHydraNode(commitHydraDto);
   }
 }

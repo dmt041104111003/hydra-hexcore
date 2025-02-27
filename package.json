@@ -29,6 +29,7 @@
     "@nestjs/platform-socket.io": "^10.4.15",
     "@nestjs/typeorm": "^10.0.2",
     "@nestjs/websockets": "^10.4.15",
+    "axios": "^1.7.9",
     "bip39": "^3.1.0",
     "cardano-wallet-js": "^1.4.0",
     "cardanocli-js": "^5.0.1",
