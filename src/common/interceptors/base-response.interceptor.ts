@@ -1,6 +1,14 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+  BadRequestException,
+  HttpException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { map, catchError } from 'rxjs/operators';
-import { Observable, throwError } from 'rxjs';
+import { Observable } from 'rxjs';
 
 @Injectable()
 export class BaseResponseInterceptor<T> implements NestInterceptor<T, any> {
@@ -20,17 +28,24 @@ export class BaseResponseInterceptor<T> implements NestInterceptor<T, any> {
       }),
       catchError((err) => {
         console.log('>>> / file: base-response.interceptor.ts:22 / err:', err);
-        console.log('>>> / file: base-response.interceptor.ts:22 / err:', err.response);
 
         // Catch and format the error response
-        const statusCode = err.status || context.switchToHttp().getResponse().statusCode;
-
-        return throwError(() => ({
+        const statusCode = (err.status ||
+          context.switchToHttp().getResponse().statusCode) as number;
+        const errResponse = {
           data: null,
           statusCode,
           message: err?.response?.message || err.message || 'An error occurred',
           status: 'failure',
-        }));
+          ...(err.cause ? { cause: err.cause } : {}),
+        };
+        if (statusCode === 500) {
+          throw new InternalServerErrorException();
+        } else if (statusCode === 400) {
+          throw new BadRequestException(errResponse);
+        } else {
+          throw new HttpException(errResponse.message, statusCode);
+        }
       }),
     );
   }

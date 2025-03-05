@@ -193,6 +193,7 @@ export class HydraMainService implements OnModuleInit {
       ],
     });
     const protocolParameters = JSON.parse(Buffer.from(output).toString());
+    await this.cardanoQueryTip();
     return {
       tip: this.cardanoNode.tip,
       protocolParameters,
@@ -704,10 +705,11 @@ export class HydraMainService implements OnModuleInit {
       if (rs.data && rs.status === 200) {
         return rs.data;
       }
-      throw new BadRequestException('Got error when commit to head');
+      throw new BadRequestException('Got error when commit to head', {
+        cause: "Get no data from '/commit",
+      });
     } catch (err) {
-      console.log(err);
-      throw new BadRequestException('Got error when commit to head');
+      throw new BadRequestException('Got error when commit to head', { cause: err.response.data });
     }
   }
 
@@ -747,7 +749,7 @@ export class HydraMainService implements OnModuleInit {
       }
       throw new BadRequestException('Got error when commit to head');
     } catch (err) {
-      console.log(err);
+      console.log('/cardano-transaction', err.response);
       throw new BadRequestException('Got error when commit to head');
     }
   }
