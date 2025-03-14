@@ -4,6 +4,7 @@ import {
   ClassSerializerInterceptor,
   Controller,
   Get,
+  Param,
   Post,
   UseInterceptors,
 } from '@nestjs/common';
@@ -70,6 +71,12 @@ export class HydraMainController {
   activeHydraParty(@Body() activePartyDto: ReqActivePartyDto) {
     // res.status(HttpStatus.OK).json(this.hydraMainService.createAccount(createAccountDto));
     return this.hydraMainService.activeHydraParty(activePartyDto);
+  }
+
+  @UseInterceptors(ClassSerializerInterceptor)
+  @Get('utxo/:address')
+  getListUtxo(@Param('address') address: string) {
+    return this.hydraMainService.getAddressUtxo(address);
   }
 
   @Post('commit-node')

@@ -26,6 +26,7 @@ import { ResActivePartyDto } from './dto/response/active-party.dto';
 import { CommitHydraDto } from './dto/request/commit-hydra.dto';
 import axios from 'axios';
 import { SubmitTxHydraDto } from './dto/request/submit-tx-hydra.dto';
+import { AddressUtxoDto } from './dto/response/address-utxo.dto';
 
 @Injectable()
 export class HydraMainService implements OnModuleInit {
@@ -215,7 +216,6 @@ export class HydraMainService implements OnModuleInit {
       '1',
       '--output-json',
     ]);
-
     try {
       const data = JSON.parse(this.cleanJSON(output));
       return data as Record<string, any>;
@@ -223,6 +223,11 @@ export class HydraMainService implements OnModuleInit {
       console.log(`Error parse json`, err);
       return {};
     }
+  }
+
+  async getAddressUtxo(address: string) {
+    const utxo = await this.cardanoCliQueryUtxo(address);
+    return utxo as AddressUtxoDto;
   }
 
   async writeFile(filePath: string, content: string): Promise<void> {
