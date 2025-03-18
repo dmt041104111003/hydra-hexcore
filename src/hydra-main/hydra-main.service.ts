@@ -316,6 +316,10 @@ export class HydraMainService implements OnModuleInit {
     const baseAddress = getBaseAddressFromMnemonic(body.mnemonic);
     const baseAddressStr = baseAddress.to_address().to_bech32();
 
+    const paymentSKey = getSigningKeyFromMnemonic(body.mnemonic)
+    const paymentVkey = new PaymentVerificationKey(paymentSKey)
+    const poiterAddress = paymentVkey.toPointerAddress(NetworkInfo.TESTNET_PREPROD).to_address().to_bech32();
+
     const existedAccount = await this.accountRepository.findOne({
       where: {
         mnemonic: body.mnemonic,
@@ -328,6 +332,7 @@ export class HydraMainService implements OnModuleInit {
     const newAccount = this.accountRepository.create();
     newAccount.mnemonic = body.mnemonic;
     newAccount.baseAddress = baseAddressStr;
+    newAccount.pointerAddress = poiterAddress
     const result = await this.accountRepository.save(newAccount);
     return result;
   }
@@ -349,8 +354,8 @@ export class HydraMainService implements OnModuleInit {
     newHydraNode.skey = skey;
     newHydraNode.vkey = vkey;
     newHydraNode.port = await this.genValidPort();
-
-    return newHydraNode;
+    const result = await this.hydraNodeRepository.save(newHydraNode);
+    return result;
   }
 
   async genHydraKey() {
