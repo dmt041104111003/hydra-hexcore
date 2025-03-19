@@ -27,6 +27,10 @@ import { CommitHydraDto } from './dto/request/commit-hydra.dto';
 import axios from 'axios';
 import { SubmitTxHydraDto } from './dto/request/submit-tx-hydra.dto';
 import { AddressUtxoDto } from './dto/response/address-utxo.dto';
+import { log } from 'node:console';
+
+import { GameRoom } from '../hydra-game/entities/Room.entity';
+import { CreateRoomDto } from '../hydra-game/dto/create-room.dto';
 
 @Injectable()
 export class HydraMainService implements OnModuleInit {
@@ -72,6 +76,8 @@ export class HydraMainService implements OnModuleInit {
     private accountRepository: Repository<Account>,
     @InjectRepository(HydraParty)
     private hydraPartyRepository: Repository<HydraParty>,
+    @InjectRepository(GameRoom)
+    private gameRoomRepository: Repository<GameRoom>,
   ) {
     const DOCKER_SOCKET = process.env.NEST_DOCKER_SOCKET_PATH || '\\\\.\\pipe\\docker_engine';
     this.docker = new Docker({ socketPath: DOCKER_SOCKET });
@@ -398,10 +404,20 @@ export class HydraMainService implements OnModuleInit {
   async genValidPort() {
     const defaultPort = 10005;
     let port = defaultPort;
-    while (!(await this.isPortAvailable(port))) {
+
+    while (!(await this.isPortAvailable(port)) || (await this.checkHydraNodePort(port))) {
+      console.log("node port: " + port)
       port++;
     }
     return port;
+  }
+
+  async checkHydraNodePort(port: number): Promise<boolean> {
+    const nodeExits = await this.hydraNodeRepository.find({
+      where: { port: port },
+    });
+
+    return nodeExits.length > 0;
   }
 
   /**
@@ -471,6 +487,10 @@ export class HydraMainService implements OnModuleInit {
         cardanoAccount,
       });
     }
+
+    // active GameRoom
+    await this.createGameRoom(newParty, false)
+
     return {
       ...newParty,
       nodes,
@@ -664,6 +684,8 @@ export class HydraMainService implements OnModuleInit {
       await container.start();
       console.log(`Container ${nodeName} started`);
     }
+    // active GameRoom
+    await this.createGameRoom(party)
 
     // check party active
     const status = await this.checkPartyActive(party);
@@ -672,6 +694,24 @@ export class HydraMainService implements OnModuleInit {
       ...party,
       status: status ? 'ACTIVE' : 'INACTIVE',
     };
+  }
+
+  async createGameRoom(partyObj: HydraParty, active_status = true) {
+    const item = await this.gameRoomRepository.findOne({
+      where: { party: { id: partyObj.id } },
+    });
+    if (item) {
+      item.status = active_status ? "ACTIVE" : "INACTIVE"
+      await this.gameRoomRepository.save(item);
+    }
+    else {
+      const room = this.gameRoomRepository.create({
+        party: partyObj,
+        name: `Room ${partyObj.id}`,
+        status: active_status ? "ACTIVE" : "INACTIVE"
+      });
+      this.gameRoomRepository.save(room);
+    }
   }
 
   checkPartyActive(party: HydraParty) {

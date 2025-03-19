@@ -7,12 +7,14 @@ import { HydraNode } from '../hydra-main/entities/HydraNode.entity';
 import { Account } from '../hydra-main/entities/Account.entity';
 import { HydraParty } from '../hydra-main/entities/HydraParty.entity';
 import { GameUser } from './entities/User.entity';
+import { GameRoom } from './entities/Room.entity';
+import { GameRoomDetail } from './entities/RoomDetail.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from 'src/constants';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([HydraNode, Account, HydraParty, GameUser]),
+    TypeOrmModule.forFeature([HydraNode, Account, HydraParty, GameUser, GameRoom, GameRoomDetail]),
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,
@@ -22,4 +24,4 @@ import { jwtConstants } from 'src/constants';
   providers: [HydraGameService],
   controllers: [HydraGameController],
 })
-export class HydraGameModule {}
+export class HydraGameModule { }

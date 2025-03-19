@@ -31,12 +31,6 @@ export class HydraNode {
   party: HydraParty;
 
   @Column({
-    default: 'false',
-    enum: ['true', 'false'],
-  })
-  clientConnected: 'true' | 'false';
-
-  @Column({
     default: new Date().toISOString(),
   })
   createdAt: string;
