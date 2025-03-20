@@ -221,7 +221,7 @@ export class HydraMainService implements OnModuleInit {
       const data = JSON.parse(this.cleanJSON(output));
       return data as Record<string, any>;
     } catch (err) {
-      console.log(`Error parse json`, err);
+      console.log(`[Error parse json] [${output}] `, err);
       return {};
     }
   }
@@ -287,8 +287,10 @@ export class HydraMainService implements OnModuleInit {
   }
 
   cleanJSON(jsonString: string) {
+    const trimFirstRegex = /^[^[{]*\{/;
     return (
       jsonString
+        .replace(trimFirstRegex, '{')
         // Remove invisible control characters and unused code points
         .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g, '')
         // Replace special quotation marks with standard ones
@@ -317,9 +319,12 @@ export class HydraMainService implements OnModuleInit {
     const baseAddress = getBaseAddressFromMnemonic(body.mnemonic);
     const baseAddressStr = baseAddress.to_address().to_bech32();
 
-    const paymentSKey = getSigningKeyFromMnemonic(body.mnemonic)
-    const paymentVkey = new PaymentVerificationKey(paymentSKey)
-    const poiterAddress = paymentVkey.toPointerAddress(NetworkInfo.TESTNET_PREPROD).to_address().to_bech32();
+    const paymentSKey = getSigningKeyFromMnemonic(body.mnemonic);
+    const paymentVkey = new PaymentVerificationKey(paymentSKey);
+    const poiterAddress = paymentVkey
+      .toPointerAddress(NetworkInfo.TESTNET_PREPROD)
+      .to_address()
+      .to_bech32();
 
     const existedAccount = await this.accountRepository.findOne({
       where: {
@@ -333,7 +338,7 @@ export class HydraMainService implements OnModuleInit {
     const newAccount = this.accountRepository.create();
     newAccount.mnemonic = body.mnemonic;
     newAccount.baseAddress = baseAddressStr;
-    newAccount.pointerAddress = poiterAddress
+    newAccount.pointerAddress = poiterAddress;
     const result = await this.accountRepository.save(newAccount);
     return result;
   }
