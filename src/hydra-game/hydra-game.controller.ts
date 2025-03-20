@@ -12,6 +12,7 @@ import {
     Req,
     UseGuards,
     UseInterceptors,
+    Put,
 } from '@nestjs/common';
 import { HydraGameService } from './hydra-game.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -74,27 +75,5 @@ export class HydraGameController {
     @Get('room/:id')
     getGameRoom(@Param('id') id: number) {
         return this.hydraGameService.getRoom(id);
-    }
-
-    @UseInterceptors(ClassSerializerInterceptor)
-    @UseGuards(AuthGuard)
-    @Get('join-room/:id')
-    getPortGameRoom(@Param('id') id: number) {
-        return this.hydraGameService.getPortRoom(id);
-    }
-
-    // ********* GAME ROOM DETAIL ***********
-    @UseInterceptors(ClassSerializerInterceptor)
-    @UseGuards(AuthGuard)
-    @Post('create-room-detail')
-    createRoomDetail(@Body() createRoomDetailDto: CreateRoomDetailDto) {
-        return this.hydraGameService.createRoomDetail(createRoomDetailDto);
-    }
-
-    @UseInterceptors(ClassSerializerInterceptor)
-    @UseGuards(AuthGuard)
-    @Delete('delete-room-detail/:id')
-    deleteRoomDetail(@Param('id') id: number) {
-        return this.hydraGameService.deleteRoomDetail(id);
     }
 }

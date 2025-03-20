@@ -11,17 +11,19 @@ import { GameRoom } from './entities/Room.entity';
 import { GameRoomDetail } from './entities/RoomDetail.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from 'src/constants';
+import { EventGateway } from './event.gateway';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([HydraNode, Account, HydraParty, GameUser, GameRoom, GameRoomDetail]),
-    JwtModule.register({
-      global: true,
-      secret: jwtConstants.secret,
-      signOptions: { expiresIn: '7d' },
-    }),
-  ],
-  providers: [HydraGameService],
-  controllers: [HydraGameController],
+    imports: [
+        TypeOrmModule.forFeature([HydraNode, Account, HydraParty, GameUser, GameRoom, GameRoomDetail]),
+        JwtModule.register({
+            global: true,
+            secret: jwtConstants.secret,
+            signOptions: { expiresIn: '1 weeks' },
+        }),
+    ],
+    providers: [HydraGameService, EventGateway],
+    controllers: [HydraGameController],
+    exports: [EventGateway],
 })
-export class HydraGameModule { }
+export class HydraGameModule {}
