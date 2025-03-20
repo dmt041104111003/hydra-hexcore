@@ -5,11 +5,13 @@ import Docker from 'dockerode';
 import bcrypt from 'bcryptjs';
 
 import { HydraParty } from '../hydra-main/entities/HydraParty.entity';
+import { HydraNode } from '../hydra-main/entities/HydraNode.entity';
 import { GameUser } from './entities/User.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GameRoom } from './entities/Room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { GameRoomDetail } from './entities/RoomDetail.entity';
+import { CreateRoomDetailDto } from './dto/create-room-detail.dto';
 import { JwtService } from '@nestjs/jwt';
 import { UserLoginDto } from './dto/user-login.dto';
 import { JwtPayload } from './interfaces/jwtPayload.type';
@@ -22,10 +24,14 @@ export class HydraGameService implements OnModuleInit {
     constructor(
         @InjectRepository(HydraParty)
         private hydraPartyRepository: Repository<HydraParty>,
+        @InjectRepository(HydraNode)
+        private hydraNodeRepository: Repository<HydraNode>,
         @InjectRepository(GameUser)
         private gameUserRepository: Repository<GameUser>,
         @InjectRepository(GameRoom)
         private gameRoomRepository: Repository<GameRoom>,
+        @InjectRepository(GameRoomDetail)
+        private gameRoomDetailRepository: Repository<GameRoomDetail>,
         private jwtService: JwtService,
     ) {
         const DOCKER_SOCKET = process.env.NEST_DOCKER_SOCKET_PATH || '\\\\.\\pipe\\docker_engine';
@@ -34,6 +40,7 @@ export class HydraGameService implements OnModuleInit {
 
     async onModuleInit() { }
 
+    // ******** GAME RO0M **********
     async createRoom(body: CreateRoomDto) {
         if (body.name.length === 0) {
             throw new BadRequestException('Room Name cannot be empty');
@@ -90,7 +97,7 @@ export class HydraGameService implements OnModuleInit {
         const queryBuilder = await this.gameRoomRepository
             .createQueryBuilder('room')
             .leftJoinAndSelect('room.party', 'party')
-            // .leftJoinAndSelect('party.hydraNodes', 'hydraNodes')
+            .leftJoinAndSelect('party.hydraNodes', 'hydraNodes')
             .leftJoinAndSelect('room.gameRoomDetails', 'gameRoomDetails')
 
         if (status) {
@@ -112,6 +119,84 @@ export class HydraGameService implements OnModuleInit {
         return room
     }
 
+    async getPortRoom(id: number) {
+        const room = await this.gameRoomRepository.findOne({
+            where: { id },
+            relations: ['party', 'party.hydraNodes', 'gameRoomDetails'],
+        });
+        if (room.status === "INACTIVE") {
+            throw new BadRequestException('Room is INACTIVE');
+        }
+
+        if (room.gameRoomDetails.length == room.party.nodes) {
+            throw new BadRequestException('You can not join the room because it is full.');
+        }
+
+        const gameRoomDetailPorts = room.gameRoomDetails.map(detail => detail.port);
+        const filteredHydraPorts = room.party.hydraNodes
+            .map(node => node.port)
+            .filter(port => !gameRoomDetailPorts.includes(port));
+
+        console.log(filteredHydraPorts);
+
+
+        return filteredHydraPorts
+    }
+
+
+    // ******** GAME RO0M DETAIL **********
+    async createRoomDetail(body: CreateRoomDetailDto) {
+        const user = await this.gameUserRepository.findOne({
+            where: { id: body.userId },
+        });
+        if (!user) {
+            throw new BadRequestException('Invalid User');
+        }
+        else {
+            const gameRoomDetail = await this.gameRoomDetailRepository.findOne({
+                where: { user: user },
+            });
+            if (gameRoomDetail) {
+                throw new BadRequestException('User already exists');
+            }
+        }
+
+        const gameRoom = await this.gameRoomRepository.findOne({
+            where: { id: body.roomId },
+        });
+        if (!gameRoom) {
+            throw new BadRequestException('Invalid Room');
+        }
+        else {
+            const hydraNode = await this.hydraNodeRepository.findOne({
+                where: { party: gameRoom.party, port: body.port },
+            });
+            if (!hydraNode) {
+                throw new BadRequestException('Invalid Port');
+            }
+        }
+
+        const roomDetail = this.gameRoomDetailRepository.create({
+            port: body.port,
+            room: gameRoom,
+            user: user
+        });
+        return this.gameRoomDetailRepository.save(roomDetail);
+    }
+
+    async deleteRoomDetail(id: GameRoomDetail['id']): Promise<Record<string, any>> {
+        const deletedRoomDetail = await this.gameRoomDetailRepository.delete({ id });
+        if (!deletedRoomDetail) {
+            throw new NotFoundException();
+        }
+        return {
+            id,
+            data: deletedRoomDetail.raw,
+            message: 'Room detail deleted successfully',
+        };
+    }
+
+    // ******** GAME USER **********
     async createUser(createUserDto: CreateUserDto) {
         const existed = await this.gameUserRepository.findOne({
             where: { address: createUserDto.address },

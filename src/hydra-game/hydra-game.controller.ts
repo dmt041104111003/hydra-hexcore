@@ -16,6 +16,7 @@ import {
 import { HydraGameService } from './hydra-game.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
+import { CreateRoomDetailDto } from './dto/create-room-detail.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { JwtPayload } from './interfaces/jwtPayload.type';
 import { AuthGuard } from 'src/auth/auth.guard';
@@ -55,6 +56,7 @@ export class HydraGameController {
         return this.hydraGameService.deleteUser(user.id);
     }
 
+    // ********* GAME ROOM ***********
     @Post('create-room')
     createRoom(@Body() createRoomDto: CreateRoomDto) {
         return this.hydraGameService.createRoom(createRoomDto);
@@ -68,5 +70,21 @@ export class HydraGameController {
     @Get('room/:id')
     getGameRoom(@Param('id') id: number) {
         return this.hydraGameService.getRoom(id);
+    }
+
+    @Get('join-room/:id')
+    getPortGameRoom(@Param('id') id: number) {
+        return this.hydraGameService.getPortRoom(id);
+    }
+
+    // ********* GAME ROOM DETAIL ***********
+    @Post('create-room-detail')
+    createRoomDetail(@Body() createRoomDetailDto: CreateRoomDetailDto) {
+        return this.hydraGameService.createRoomDetail(createRoomDetailDto);
+    }
+
+    @Delete('delete-room-detail/:id')
+    deleteRoomDetail(@Param('id') id: number) {
+        return this.hydraGameService.deleteRoomDetail(id);
     }
 }
