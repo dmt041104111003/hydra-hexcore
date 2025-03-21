@@ -26,7 +26,8 @@ enum SocketEvent {
 
 @WebSocketGateway({
     cors: {
-        origin: '*',
+        origin: ['http://localhost:3001', 'http://localhost:3000'],
+        credentials: true,
     },
     namespace: 'hydra-game',
     transports: ['websocket', 'polling'],
@@ -44,7 +45,11 @@ export class EventGateway implements OnGatewayConnection, OnGatewayDisconnect {
     async handleConnection(@ConnectedSocket() client: Socket, ...args: any[]): Promise<any> {
         try {
             console.log('[Client connected]', client.id);
-            const token = JwtHelper.extractTokenFromHeader(client.handshake.headers);
+            let token = client.handshake.auth['token'];
+            // Try to get token from header if not found in auth (using for postman testing)
+            if (!token) {
+                token = JwtHelper.extractTokenFromHeader(client.handshake.headers);
+            }
             if (!token) {
                 client.disconnect();
             }

@@ -3,25 +3,30 @@ import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class GameUser {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @Column({
-    unique: true,
-  })
-  address: string;
+    @Column({
+        unique: true,
+    })
+    address: string;
 
-  @Column({
-    default: '',
-  })
-  avatar: string;
+    @Column({
+        default: '',
+    })
+    avatar: string;
 
-  @Exclude()
-  @Column()
-  password: string;
+    @Column({
+        default: '',
+    })
+    alias: string;
 
-  @Column({
-    default: new Date().toISOString(),
-  })
-  createdAt: string;
+    @Exclude()
+    @Column()
+    password: string;
+
+    @Column({
+        default: new Date().toISOString(),
+    })
+    createdAt: string;
 }
