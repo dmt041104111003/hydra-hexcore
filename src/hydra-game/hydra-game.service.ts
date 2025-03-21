@@ -14,6 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UserLoginDto } from './dto/user-login.dto';
 import { JwtPayload } from './interfaces/jwtPayload.type';
 import { ResUserInfoDto } from './dto/response/user-info.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class HydraGameService implements OnModuleInit {
@@ -217,6 +218,8 @@ export class HydraGameService implements OnModuleInit {
         const user = this.gameUserRepository.create({
             address: createUserDto.address,
             password: passwordHashed,
+            alias: createUserDto.alias,
+            avatar: createUserDto.avatar,
         });
         return this.gameUserRepository.save(user);
     }
@@ -237,8 +240,27 @@ export class HydraGameService implements OnModuleInit {
         };
     }
 
+    async updateUserInfo(id: GameUser['id'], updateUserDto: UpdateUserDto): Promise<ResUserInfoDto> {
+        const user = await this.gameUserRepository.findOne({ where: { id } });
+        if (!user) {
+            throw new NotFoundException();
+        }
+        user.avatar = updateUserDto?.avatar || user.avatar;
+        user.alias = updateUserDto?.alias || user.alias;
+        const updatedUser = await this.gameUserRepository.save(user);
+        return new ResUserInfoDto(updatedUser);
+    }
+
     async getUserInfo(id: GameUser['id']): Promise<ResUserInfoDto> {
         const user = await this.gameUserRepository.findOne({ where: { id } });
+        if (!user) {
+            throw new NotFoundException();
+        }
+        return new ResUserInfoDto(user);
+    }
+
+    async getUserInfoByAddress(address: GameUser['address']): Promise<ResUserInfoDto> {
+        const user = await this.gameUserRepository.findOne({ where: { address } });
         if (!user) {
             throw new NotFoundException();
         }

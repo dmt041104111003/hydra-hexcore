@@ -20,6 +20,7 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { JwtPayload } from './interfaces/jwtPayload.type';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('hydra-game')
 export class HydraGameController {
@@ -45,6 +46,22 @@ export class HydraGameController {
     auth(@Req() req: any) {
         const user = req.user as JwtPayload;
         return this.hydraGameService.getUserInfo(user.id);
+    }
+
+    @UseInterceptors(ClassSerializerInterceptor)
+    @UseGuards(AuthGuard)
+    @HttpCode(HttpStatus.OK)
+    @Put('user-info')
+    updateUserInfo(@Body() updateUserDto: UpdateUserDto, @Req() req: any) {
+        const user = req.user as JwtPayload;
+        return this.hydraGameService.updateUserInfo(user.id, updateUserDto);
+    }
+
+    @UseInterceptors(ClassSerializerInterceptor)
+    @HttpCode(200)
+    @Get('address/:address')
+    getUserInfoByAddress(@Param('address') address: string) {
+        return this.hydraGameService.getUserInfoByAddress(address);
     }
 
     @UseInterceptors(ClassSerializerInterceptor)
