@@ -29,4 +29,9 @@ export class GameRoom {
 
   @OneToMany(() => GameRoomDetail, (gameRoomDetail) => gameRoomDetail.room)
   gameRoomDetails: GameRoomDetail[];
+
+  @Column({
+    default: 2,
+  })
+  betAmount: number;
 }

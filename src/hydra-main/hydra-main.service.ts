@@ -51,6 +51,7 @@ export class HydraMainService implements OnModuleInit {
       process.env.NEST_HYDRA_NODE_FOLDER || 'D:/Projects/Vtechcom/cardano-node/hydra/preprod',
     hydraNodeScriptTxId:
       '5237b67923bf67e6691a09117c45fdc26c27911a8e2469d6a063a78da1c7c60a,5ed4032823e295b542d0cde0c5e531ca17c9834947400c05a50549607dbc3fa5,128af7ef4fd3fa8d1eda5cb1628aa2a1e8846d7685d91e0c6dae50b7d5f263b2',
+    cardanoAccountMinLovelace: process.env.ACCOUNT_MINT_LOVELACE || 50000000,
   };
 
   private cardanoNode = {
@@ -511,6 +512,14 @@ export class HydraMainService implements OnModuleInit {
     return parties;
   }
 
+  async checkUtxoAccount(account: Account): Promise<boolean> {
+    const a_utxo = await this.cardanoCliQueryUtxo(account.pointerAddress);
+    const totalLovelace = Object.values(a_utxo)
+      .reduce((sum, item) => sum + item.value.lovelace, 0);
+
+    return totalLovelace >= this.CONSTANTS.cardanoAccountMinLovelace ? true : false
+  }
+
   async activeHydraParty(activePartyDto: ReqActivePartyDto): Promise<ResActivePartyDto> {
     const partyId = activePartyDto.id;
     const party = await this.hydraPartyRepository
@@ -526,6 +535,13 @@ export class HydraMainService implements OnModuleInit {
     if (party.status === 'ACTIVE') {
       throw new BadRequestException('Party is already active');
     }
+    for (const node of party.hydraNodes) {
+      const check = await this.checkUtxoAccount(node.cardanoAccount)
+      if (!check) {
+        throw new BadRequestException(node.cardanoAccount.pointerAddress + ' not enough lovelace');
+      }
+    }
+
 
     // create party dir
     const partyDirPath = `${this.CONSTANTS.hydraNodeFolder}/party-${party.id}`;
@@ -691,6 +707,8 @@ export class HydraMainService implements OnModuleInit {
     }
     // active GameRoom
     await this.createGameRoom(party)
+    party.status = 'ACTIVE'
+    await this.hydraPartyRepository.save(party)
 
     // check party active
     const status = await this.checkPartyActive(party);
