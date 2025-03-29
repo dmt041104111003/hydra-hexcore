@@ -18,10 +18,19 @@ import { ScheduleModule } from '@nestjs/schedule';
         HydraGameModule,
         ShellModule,
         TypeOrmModule.forRoot({
-            type: 'sqlite', // Database type
-            database: './database/database.sqlite', // SQLite file
-            entities: [__dirname + '/**/*.entity{.ts,.js}'], // Path to entities
-            synchronize: true, // Auto-create database schema
+            // type: 'sqlite', // Database type
+            // database: './database/database.sqlite', // SQLite file
+            // entities: [__dirname + '/**/*.entity{.ts,.js}'], // Path to entities
+            // synchronize: true, // Auto-create database schema
+
+            type: 'mysql',
+            host: 'localhost',
+            port: 3309,
+            username: 'hexcore_admin',
+            password: 'hexcore_admin@2025',
+            database: 'hexcore',
+            entities: [__dirname + '/**/*.entity{.ts,.js}'],
+            synchronize: true,
         }),
     ],
     controllers: [AppController],
