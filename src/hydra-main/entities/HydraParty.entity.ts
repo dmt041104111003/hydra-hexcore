@@ -17,6 +17,7 @@ export class HydraParty {
   nodes: number;
 
   @Column({
+    type: 'enum',
     default: 'INACTIVE',
     enum: ['ACTIVE', 'INACTIVE'],
   })

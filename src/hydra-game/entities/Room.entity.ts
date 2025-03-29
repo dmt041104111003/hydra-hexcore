@@ -17,6 +17,7 @@ export class GameRoom {
   party: HydraParty;
 
   @Column({
+    type: 'enum',
     default: 'INACTIVE',
     enum: ['ACTIVE', 'INACTIVE'],
   })
