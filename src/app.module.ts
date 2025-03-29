@@ -5,32 +5,27 @@ import { HydraMainModule } from './hydra-main/hydra-main.module';
 import { HydraGameModule } from './hydra-game/hydra-game.module';
 import { ShellModule } from './shell/shell.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import configuration from './config/configuration';
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             envFilePath: '.env',
+            load: [configuration],
+            isGlobal: true,
         }),
         ScheduleModule.forRoot(),
         HydraMainModule,
         HydraGameModule,
         ShellModule,
-        TypeOrmModule.forRoot({
-            // type: 'sqlite', // Database type
-            // database: './database/database.sqlite', // SQLite file
-            // entities: [__dirname + '/**/*.entity{.ts,.js}'], // Path to entities
-            // synchronize: true, // Auto-create database schema
-
-            type: 'mysql',
-            host: 'localhost',
-            port: 3309,
-            username: 'hexcore_admin',
-            password: 'hexcore_admin@2025',
-            database: 'hexcore',
-            entities: [__dirname + '/**/*.entity{.ts,.js}'],
-            synchronize: true,
+        TypeOrmModule.forRootAsync({
+            imports: [ConfigModule],
+            useFactory: (configService: ConfigService) => ({
+                ...configService.get('database'),
+            }),
+            inject: [ConfigService],
         }),
     ],
     controllers: [AppController],

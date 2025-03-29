@@ -91,7 +91,12 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "bcrypt"
+      "@nestjs/core",
+      "@scarf/scarf",
+      "bcrypt",
+      "cpu-features",
+      "sqlite3",
+      "ssh2"
     ]
   }
 }

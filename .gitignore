@@ -3,6 +3,8 @@
 /node_modules
 /build
 /database
+/hydra
+/cardano-node
 
 # Logs
 logs
