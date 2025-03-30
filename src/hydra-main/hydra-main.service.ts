@@ -68,7 +68,7 @@ export class HydraMainService implements OnModuleInit {
         },
     };
 
-    private walletServer = WalletServer.init('https://dev.cardano-wallet.hdev99.io.vn/v2');
+    private walletServer = WalletServer.init('https://dev-cardano-wallet.hdev99.io.vn/v2');
     private activeNodes: Docker.ContainerInfo[] = [];
 
     constructor(
@@ -244,8 +244,33 @@ export class HydraMainService implements OnModuleInit {
     }
 
     async getAddressUtxo(address: string) {
-        const utxo = await this.cardanoCliQueryUtxo(address);
-        return utxo as AddressUtxoDto;
+        try {
+
+            const cardanoCli = new CardanoCliJs({
+                cliPath: `docker exec cardano-node cardano-cli`,
+                dir: `/workspace`,
+                era: '',
+                network: '1',
+                socketPath: '/workspace/node.socket',
+                shelleyGenesis: '/workspace/shelley-genesis.json',
+            });
+            const output = await cardanoCli.runCommand({
+                command: 'query',
+                subcommand: 'utxo',
+                parameters: [
+                    { name: 'address', value: address },
+                    { name: 'socket-path', value: '/workspace/node.socket' },
+                    { name: 'testnet-magic', value: '1' },
+                    { name: 'output-json', value: '' },
+                ],
+    
+            });
+            const utxo = JSON.parse(Buffer.from(output).toString());
+            return utxo as AddressUtxoDto;
+        } catch (err) {
+            console.log(`[Error getAddressUtxo] [${address}] `, err);
+            throw new BadRequestException('Error getAddressUtxo');
+        }
     }
 
     async writeFile(filePath: string, content: string): Promise<void> {
@@ -327,7 +352,7 @@ export class HydraMainService implements OnModuleInit {
     async getListAccount() {
         const accounts = (await this.accountRepository.find()) as Array<Account & { utxo: any }>;
         for (const account of accounts) {
-            account.utxo = await this.cardanoCliQueryUtxo(account.pointerAddress);
+            account.utxo = {}
         }
         return accounts.map(account => new ResCardanoAccountDto(account));
     }
