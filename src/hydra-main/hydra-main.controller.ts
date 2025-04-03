@@ -7,6 +7,7 @@ import {
     Param,
     Post,
     Query,
+    Req,
     UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
@@ -48,6 +49,14 @@ export class HydraMainController {
     @Post('login')
     async login(@Body() loginDto: AdminLoginDto) {
         const user = await this.hydraAdminService.login(loginDto);
+        return user;
+    }
+
+    @UseGuards(AdminAuthGuard)
+    @UseInterceptors(ClassSerializerInterceptor)
+    @Get('auth')
+    async auth(@Req() req: any) {
+        const user = await this.hydraAdminService.auth(req.user.id);
         return user;
     }
 

@@ -25,4 +25,12 @@ export class HydraAdminService {
             accessToken: await this.jwtService.signAsync(payload),
         };
     }
+
+    async auth(id: number) {
+        const user = await this.userRepository.findOne({ where: { id } });
+        if (!user) {
+            throw new UnauthorizedException('Invalid credentials');
+        }
+        return user;
+    }
 }
