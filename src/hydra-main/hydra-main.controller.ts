@@ -130,11 +130,13 @@ export class HydraMainController {
         return this.hydraMainService.getAddressUtxo(address);
     }
 
+    // TODO: Helper api for hydra-bridge, remove it later
     @Post('commit-node')
     commitToHydraNode(@Body() commitHydraDto: CommitHydraDto) {
         return this.hydraMainService.commitToHydraNode(commitHydraDto);
     }
 
+    // TODO: Helper api for hydra-bridge, remove it later
     @Post('submit-node')
     submitToHydraNode(@Body() submitBody: SubmitTxHydraDto) {
         return this.hydraMainService.submitTxToHydraNode(submitBody);

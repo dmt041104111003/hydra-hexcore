@@ -58,11 +58,11 @@ export class HydraMainService implements OnModuleInit {
         cardanoNodeImage: process.env.NEST_CARDANO_NODE_IMAGE || 'ghcr.io/intersectmbo/cardano-node:10.1.4',
         cardanoNodeFolder: process.env.NEST_CARDANO_NODE_FOLDER || 'D:/Projects/Vtechcom/cardano-node',
         cardanoNodeSocketPath:
-            process.env.NEST_CARDANO_NODE_SOCKER_PATH || 'D:/Projects/Vtechcom/cardano-node/node.socket',
+            process.env.NEST_CARDANO_NODE_SOCKET_PATH || 'D:/Projects/Vtechcom/cardano-node/node.socket',
         hydraNodeImage: process.env.NEST_HYDRA_NODE_IMAGE || 'ghcr.io/cardano-scaling/hydra-node:0.20.0',
         hydraNodeFolder: process.env.NEST_HYDRA_NODE_FOLDER || 'D:/Projects/Vtechcom/cardano-node/hydra/preprod',
-        hydraNodeScriptTxId:
-            '5237b67923bf67e6691a09117c45fdc26c27911a8e2469d6a063a78da1c7c60a,5ed4032823e295b542d0cde0c5e531ca17c9834947400c05a50549607dbc3fa5,128af7ef4fd3fa8d1eda5cb1628aa2a1e8846d7685d91e0c6dae50b7d5f263b2',
+        hydraNodeScriptTxId: process.env.NEST_HYDRA_NODE_SCRIPT_TX_ID || '',
+        hydraNodeNetworkId: process.env.NEST_HYDRA_NODE_NETWORK_ID || '1',
         cardanoAccountMinLovelace: process.env.ACCOUNT_MINT_LOVELACE || 50000000,
         enableNetworkHost: process.env.NEST_DOCKER_ENABLE_NETWORK_HOST === 'true',
 
@@ -739,14 +739,13 @@ export class HydraMainService implements OnModuleInit {
                     `--persistence-dir`,
                     `/data/party-${party.id}/persistence-${nodeName}`,
 
+                    `--api-host`,
+                    `0.0.0.0`,
                     `--api-port`,
                     `${node.port}`,
 
-                    `--api-host`,
-                    `0.0.0.0`,
-
-                    '--port',
-                    `${node.port + 1000}`,
+                    `--listen`,
+                    `0.0.0.0:${node.port + 1000}`,
 
                     ...peerNodeParams,
 
@@ -764,8 +763,11 @@ export class HydraMainService implements OnModuleInit {
                     `--node-socket`,
                     `/cardano-node/node.socket`,
 
+                    `--contestation-period`,
+                    `60`,
+
                     `--testnet-magic`,
-                    `1`,
+                    `${this.CONSTANTS.hydraNodeNetworkId}`,
                 ],
                 HostConfig: {
                     ...(this.CONSTANTS.enableNetworkHost
