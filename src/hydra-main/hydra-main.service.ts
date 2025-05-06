@@ -437,6 +437,25 @@ export class HydraMainService implements OnModuleInit {
         });
     }
 
+    async getHydraNodeDetail(id: number) {
+        const node = await this.hydraNodeRepository.findOne({
+            where: { id },
+            relations: {
+                cardanoAccount: true,
+            },
+        });
+        const activeNodes = await this.getActiveNodeContainers();
+        if (!node) {
+            throw new BadRequestException('Invalid Hydra Node Id');
+        }
+        const containerNode = activeNodes.find(item => item.hydraNodeId === node.id.toString());
+        return {
+            ...node,
+            status: containerNode ? 'ACTIVE' : 'INACTIVE',
+            container: containerNode?.container,
+        }
+    }
+
     async createHydraNode(body: CreateHydraNodeDto) {
         const cardanoAccount = await this.accountRepository.findOne({
             where: {

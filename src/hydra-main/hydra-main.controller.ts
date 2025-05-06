@@ -105,6 +105,12 @@ export class HydraMainController {
         );
     }
 
+    @UseInterceptors(ClassSerializerInterceptor)
+    @Get('hydra-node/:id')
+    async getNodeDetail(@Param('id') id: string): Promise<any> {
+        return this.hydraMainService.getHydraNodeDetail(+id);
+    }
+
     @Post('create-party')
     createHydraParty(@Body() createPartyDto: CreatePartyDto) {
         // res.status(HttpStatus.OK).json(this.hydraMainService.createAccount(createAccountDto));
