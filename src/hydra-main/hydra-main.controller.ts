@@ -27,6 +27,7 @@ import { AdminLoginDto } from './dto/admin-login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { HydraAdminService } from './hydra-admin.service';
 import { AdminAuthGuard } from 'src/auth/admin-auth.guard';
+import { ReqClearPartyDataDto } from './dto/request/clear-party-data.dto';
 
 @Controller('hydra-main')
 export class HydraMainController {
@@ -67,6 +68,7 @@ export class HydraMainController {
         return this.hydraMainService.getListAccount();
     }
 
+    @UseGuards(AdminAuthGuard)
     @UseInterceptors(ClassSerializerInterceptor)
     @Post('create-account')
     createAccount(@Body() createAccountDto: CreateAccountDto) {
@@ -78,6 +80,7 @@ export class HydraMainController {
         return this.hydraMainService.createAccount(createAccountDto);
     }
 
+    @UseGuards(AdminAuthGuard)
     @Post('create-node')
     createHydraNode(@Body() createHydraNodeDto: CreateHydraNodeDto) {
         // res.status(HttpStatus.OK).json(this.hydraMainService.createAccount(createAccountDto));
@@ -111,6 +114,7 @@ export class HydraMainController {
         return this.hydraMainService.getHydraNodeDetail(+id);
     }
 
+    @UseGuards(AdminAuthGuard)
     @Post('create-party')
     createHydraParty(@Body() createPartyDto: CreatePartyDto) {
         // res.status(HttpStatus.OK).json(this.hydraMainService.createAccount(createAccountDto));
@@ -123,6 +127,7 @@ export class HydraMainController {
         return this.hydraMainService.getListHydraParty();
     }
 
+    @UseGuards(AdminAuthGuard)
     @UseInterceptors(ClassSerializerInterceptor)
     @Post('active-party')
     activeHydraParty(@Body() activePartyDto: ReqActivePartyDto) {
@@ -132,9 +137,17 @@ export class HydraMainController {
 
     @UseInterceptors(ClassSerializerInterceptor)
     @Post('deactive-party')
-    deactiveHydraParty(@Body() activePartyDto: ReqActivePartyDto) {
+    deactiveHydraParty(@Body() deactivePartyDto: ReqActivePartyDto) {
         // res.status(HttpStatus.OK).json(this.hydraMainService.createAccount(createAccountDto));
-        return this.hydraMainService.deactiveHydraParty(activePartyDto);
+        return this.hydraMainService.deactiveHydraParty(deactivePartyDto);
+    }
+
+    @UseGuards(AdminAuthGuard)
+    @UseInterceptors(ClassSerializerInterceptor)
+    @Post('clear-party-data')
+    clearData(@Body() clearPartyDto: ReqClearPartyDataDto) {
+        // res.status(HttpStatus.OK).json(this.hydraMainService.createAccount(createAccountDto));
+        return this.hydraMainService.clearHydraPersistents(clearPartyDto);
     }
 
     @UseInterceptors(ClassSerializerInterceptor)

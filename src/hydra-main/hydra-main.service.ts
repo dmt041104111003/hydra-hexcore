@@ -1,9 +1,9 @@
-import { BadRequestException, Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { HydraNode } from './entities/HydraNode.entity';
 import { In, Repository } from 'typeorm';
 import { writeFileSync } from 'node:fs';
-import { access, constants, readFile, unlink, mkdir } from 'node:fs/promises';
+import { access, constants, readFile, unlink, mkdir, rmdir, rm } from 'node:fs/promises';
 import Docker from 'dockerode';
 import { Account } from './entities/Account.entity';
 import { CreateAccountDto } from './dto/create-account.dto';
@@ -37,6 +37,9 @@ import { HydraDto } from './dto/hydra.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 import configuration from 'src/config/configuration';
+import { ReqClearPartyDataDto } from './dto/request/clear-party-data.dto';
+import { resolvePartyDirPath, resolvePersistenceDir } from './utils/path-resolver';
+import { resolveHydraNodeName } from './utils/name-resolver';
 
 type ContainerNode = {
     hydraNodeId: string;
@@ -666,7 +669,8 @@ export class HydraMainService implements OnModuleInit {
         }
 
         // create party dir
-        const partyDirPath = `${this.CONSTANTS.hydraNodeFolder}/party-${party.id}`;
+        // const partyDirPath = `${this.CONSTANTS.hydraNodeFolder}/party-${party.id}`;
+        const partyDirPath = resolvePartyDirPath(party.id, this.CONSTANTS.hydraNodeFolder);
         try {
             await access(partyDirPath, constants.R_OK | constants.W_OK);
         } catch (error: any) {
@@ -756,7 +760,7 @@ export class HydraMainService implements OnModuleInit {
                     `${nodeName}`,
 
                     `--persistence-dir`,
-                    `/data/party-${party.id}/persistence-${nodeName}`,
+                    `/data/${resolvePersistenceDir(party.id, nodeName)}`,
 
                     `--api-host`,
                     `0.0.0.0`,
@@ -887,6 +891,49 @@ export class HydraMainService implements OnModuleInit {
         };
     }
 
+    async clearHydraPersistents(data: ReqClearPartyDataDto) {
+        try {
+            console.log('data.ids', data.ids);
+            const partyIds = data.ids;
+            const [parties, count] = await this.hydraPartyRepository
+                .createQueryBuilder('party')
+                .where('party.id IN (:...ids)', { ids: partyIds })
+                .leftJoinAndSelect('party.hydraNodes', 'hydraNodes')
+                .leftJoinAndSelect('hydraNodes.cardanoAccount', 'cardanoAccount')
+                .getManyAndCount()
+
+            if (!count || !parties) {
+                throw new NotFoundException('Invalid Party Id');
+            }
+            // await access(partyDirPath, constants.R_OK | constants.W_OK);
+            const removedDirs = [] as string[]
+            const errors = [] as string[]
+            for (const party of parties) {
+                for (const node of party.hydraNodes) {
+                    const persistenceDir = resolvePersistenceDir(party.id, resolveHydraNodeName(node.id), this.CONSTANTS.hydraNodeFolder)
+                    console.log('persistenceDir', persistenceDir)
+                    try {
+                        await access(persistenceDir, constants.R_OK | constants.W_OK);
+                        await rm(persistenceDir, { recursive: true, force: true })
+                        removedDirs.push(persistenceDir)
+                    } catch (error) {
+                        errors.push(error.message)
+                    }
+                }
+            }
+            return {
+                removedDirs,
+                errors,
+                parties
+            }
+        } catch (error: any) {
+            console.log('error', error)
+            // console.error(`Error while accessing party dir: ${partyDirPath}`, error.message);
+            // await mkdir(partyDirPath, { recursive: true });
+            return []
+        }
+    }
+
     // async createGameRoom(partyObj: HydraParty, active_status = true) {
     //     const item = await this.gameRoomRepository.findOne({
     //         where: { party: { id: partyObj.id } },
@@ -936,7 +983,7 @@ export class HydraMainService implements OnModuleInit {
     }
 
     getDockerContainerName(hydraNode: HydraNode) {
-        return `hexcore-hydra-node-${hydraNode.id}`;
+        return resolveHydraNodeName(hydraNode.id)
     }
 
     async commitToHydraNode(commitHydraDto: CommitHydraDto) {
