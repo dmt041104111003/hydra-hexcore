@@ -801,7 +801,10 @@ export class HydraMainService implements OnModuleInit {
                     },
                     Env: [
                         'ETCD_AUTO_COMPACTION_MODE=periodic',
-                        'ETCD_AUTO_COMPACTION_RETENTION=168h'
+                        'ETCD_AUTO_COMPACTION_RETENTION=168h',
+                        // Giảm nhịp heartbeat, tăng timeout election để hạn chế lease drop
+                        'ETCD_HEARTBEAT_INTERVAL=1000', // 1000ms
+                        'ETCD_ELECTION_TIMEOUT=5000',   // 5000ms
                     ]
                 });
             // @ts-ignore
