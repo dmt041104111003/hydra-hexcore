@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException, OnModuleIni
 import { InjectRepository } from '@nestjs/typeorm';
 import { HydraNode } from './entities/HydraNode.entity';
 import { In, Repository } from 'typeorm';
-import { writeFileSync } from 'node:fs';
+import { chmod, chmodSync, writeFileSync } from 'node:fs';
 import { access, constants, readFile, unlink, mkdir, rmdir, rm } from 'node:fs/promises';
 import Docker from 'dockerode';
 import { Account } from './entities/Account.entity';
@@ -381,7 +381,6 @@ export class HydraMainService implements OnModuleInit {
         if (!jsonString.startsWith('{')) {
             jsonString = _jsonString.slice(1, jsonString.length)
         }
-        console.log(jsonString)
         return jsonString
     }
 
@@ -677,6 +676,7 @@ export class HydraMainService implements OnModuleInit {
         } catch (error: any) {
             console.error(`Error while accessing party dir: ${partyDirPath}`, error.message);
             await mkdir(partyDirPath, { recursive: true });
+            await chmodSync(partyDirPath, 0o775); // RWX cho owner & group
         }
         // generate protocol-parameters.json
         const cardanoCli = new CardanoCliJs({
@@ -784,8 +784,8 @@ export class HydraMainService implements OnModuleInit {
                         '--cardano-signing-key', `/data/party-${party.id}/${nodeName}.cardano.sk`,
                         '--hydra-scripts-tx-id', `${this.CONSTANTS.hydraNodeScriptTxId}`,
 
-                        '--deposit-period', `20s`,
-                        '--contestation-period', `15s`,
+                        '--deposit-period', `60s`,
+                        '--contestation-period', `1200s`,
                         
                         '--testnet-magic', `${this.CONSTANTS.hydraNodeNetworkId}`,
                         '--node-socket', `/cardano-node/node.socket`,
@@ -817,7 +817,8 @@ export class HydraMainService implements OnModuleInit {
                         // Giảm nhịp heartbeat, tăng timeout election để hạn chế lease drop
                         'ETCD_HEARTBEAT_INTERVAL=1000', // 1000ms
                         'ETCD_ELECTION_TIMEOUT=5000',   // 5000ms
-                    ]
+                    ],
+                    User: `${process.getuid()}:${process.getgid()}`,
                 });
             // @ts-ignore
             node.container = {
@@ -826,7 +827,6 @@ export class HydraMainService implements OnModuleInit {
                 args: (await container.inspect()).Args,
                 image: (await container.inspect()).Config.Image,
             };
-            console.log('container', (await container.inspect()).Args)
             await container.start();
             console.log(`Container ${nodeName} started`);
         }
