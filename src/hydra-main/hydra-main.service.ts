@@ -784,7 +784,7 @@ export class HydraMainService implements OnModuleInit {
                         '--cardano-signing-key', `/data/party-${party.id}/${nodeName}.cardano.sk`,
                         '--hydra-scripts-tx-id', `${this.CONSTANTS.hydraNodeScriptTxId}`,
 
-                        '--deposit-period', `60s`,
+                        '--deposit-period', `240s`,
                         '--contestation-period', `1200s`,
                         
                         '--testnet-magic', `${this.CONSTANTS.hydraNodeNetworkId}`,
