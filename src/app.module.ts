@@ -2,7 +2,6 @@ import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HydraMainModule } from './hydra-main/hydra-main.module';
-import { HydraGameModule } from './hydra-game/hydra-game.module';
 import { ShellModule } from './shell/shell.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -37,7 +36,6 @@ import { HydraConsumerModule } from './hydra-consumer/hydra-consumer.module';
             },
         }),
         HydraMainModule,
-        HydraGameModule,
         ShellModule,
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],

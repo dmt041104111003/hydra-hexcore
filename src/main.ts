@@ -13,6 +13,7 @@ async function bootstrap() {
     app.useGlobalPipes(new ValidationPipe());
     await app.listen(process.env.PORT ?? 3000, () => {
         console.log(`Server is running on Port:${process.env.PORT ?? 3000}`);
+        console.log(`http://localhost:${process.env.PORT ?? 3000}`);
     });
 }
 bootstrap();

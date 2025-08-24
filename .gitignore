@@ -5,6 +5,8 @@
 /database
 /hydra
 /cardano-node
+package-log.json
+yarn.lock
 
 # Logs
 logs

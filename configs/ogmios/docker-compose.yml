@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  ogmios:
+    image: cardanosolutions/ogmios:latest
+    container_name: ogmios
+    restart: on-failure
+    ports:
+      - ${OGMIOS_PORT:-1337}:1337
+    volumes:
+      # mount socket để ogmios nói chuyện với cardano-node
+      - ../cardano-node:/cardano-node
+    command:
+      [
+        "--node-socket", "/cardano-node/node.socket",
+        "--node-config", "/config/preprod/cardano-node/config.json",
+        "--host", "0.0.0.0"
+      ]
+
+volumes:
+  node-ipc:

@@ -1,0 +1,18 @@
+services:
+  cardano-node:
+    image: ghcr.io/intersectmbo/cardano-node:10.2.1
+    container_name: cardano-node
+    environment:
+      - CARDANO_NODE_SOCKET_PATH=/workspace/node.socket
+    volumes:
+      - ./database:/db # Persistent volume for the database
+      - ./:/workspace # Path for the node socket
+    ports:
+      - "8091:8091" # Expose port 8091
+    command: >
+      run --config /workspace/config.json --topology /workspace/topology.json --socket-path /workspace/node.socket --database-path /db --port 8091 --host-addr 0.0.0.0
+    restart: always
+
+volumes:
+  db:
+    driver: local
