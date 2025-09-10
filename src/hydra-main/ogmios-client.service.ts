@@ -24,9 +24,10 @@ export class OgmiosClientService implements OnModuleInit, OnModuleDestroy {
 
     constructor(private configService: ConfigService) {
         this.logger.log('Ogmios client service instantiated');
+        const NEST_OGMIOS_PORT = this.configService.get('NEST_OGMIOS_PORT');
         this.connection = createConnectionObject({
             host: this.configService.get('NEST_OGMIOS_HOST') || 'localhost',
-            port: this.configService.get('NEST_OGMIOS_PORT') || 1337,
+            port: ['443', '80'].includes(NEST_OGMIOS_PORT) ? undefined : NEST_OGMIOS_PORT,
             tls: false,
         });
     }

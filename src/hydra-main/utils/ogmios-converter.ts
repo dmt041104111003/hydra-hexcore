@@ -19,12 +19,8 @@ export const convertUtxoToUTxOObject = (utxos: Utxo): UTxOObject => {
             const datumHash = utxo.datumHash || null;
 
             const inlineDatumRaw = utxo.datum || null;
-            const plutusData = inlineDatumRaw
-                ? CardanoWASM.PlutusData.from_bytes(Buffer.from(inlineDatumRaw, 'hex'))
-                : null;
-            const inlineDatum = inlineDatumRaw
-                ? plutusData.to_json(CardanoWASM.PlutusDatumSchema.DetailedSchema)
-                : null;
+            const plutusData = inlineDatumRaw ? CardanoWASM.PlutusData.from_hex(inlineDatumRaw) : null;
+            const inlineDatum = plutusData ? plutusData.to_json(CardanoWASM.PlutusDatumSchema.DetailedSchema) : null;
 
             // Nếu không có datum mà chỉ có datumHash thì inlineDatumhash = null
             const inlineDatumHash = plutusData ? CardanoWASM.hash_plutus_data(plutusData).to_hex() : null;
