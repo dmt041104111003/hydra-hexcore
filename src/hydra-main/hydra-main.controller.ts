@@ -29,6 +29,7 @@ import { HydraAdminService } from './hydra-admin.service';
 import { AdminAuthGuard } from 'src/auth/admin-auth.guard';
 import { ReqClearPartyDataDto } from './dto/request/clear-party-data.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AddressUtxoDto } from './dto/response/address-utxo.dto';
 
 @ApiTags('Hydra Main Service')
 @Controller('hydra-main')
@@ -152,10 +153,12 @@ export class HydraMainController {
         return this.hydraMainService.clearHydraPersistents(clearPartyDto);
     }
 
-    @UseInterceptors(ClassSerializerInterceptor)
+    // NOTE: Không sử dụng ClassSerializerInterceptor ở đây vì gây ra lỗi mất field constructor trong inlineDatum
+    // @UseInterceptors(ClassSerializerInterceptor)
     @Get('utxo/:address')
-    getListUtxo(@Param('address') address: string) {
-        return this.hydraMainService.getAddressUtxo(address);
+    async getListUtxo(@Param('address') address: string): Promise<AddressUtxoDto> {
+        const rs = await this.hydraMainService.getAddressUtxo(address);
+        return rs
     }
 
     @ApiOperation({ summary: 'Get active nodes' })
