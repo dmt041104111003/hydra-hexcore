@@ -211,7 +211,6 @@ export class HydraMainService implements OnModuleInit {
                         };
                     });
                 this.cacheManager.set<Caching['activeNodes']>('activeNodes', activeNodes);
-                this.logger.log('>>> / file: hydra-main.service.ts:217 / Active nodes updated:', activeNodes);
             })
             .catch(err => {
                 this.logger.error('>>> / file: hydra-main.service.ts:217 / Error fetching active nodes:', err);
