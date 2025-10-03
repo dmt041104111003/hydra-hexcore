@@ -371,6 +371,8 @@ export class HydraMainService implements OnModuleInit {
             order: { id: 'DESC' },
         });
         const activeNodes = await this.getActiveNodeContainers();
+        console.log('>>> / activeNodes:', nodes);
+
         return nodes.map(node => {
             // check node active
             const isActive = activeNodes.find(item => item.hydraNodeId === node.id.toString());

@@ -10,7 +10,7 @@ export class HydraDto {
         this.port = hydraNode.port;
         this.vkey = hydraNode.vkey;
         this.createdAt = hydraNode.createdAt;
-        this.cardanoWallet = hydraNode.cardanoAccount;
+        this.cardanoAccount = hydraNode.cardanoAccount;
         this.status = status;
     }
 
@@ -52,7 +52,7 @@ export class HydraDto {
 
     @ApiProperty()
     @IsNotEmpty()
-    cardanoWallet: Account;
+    cardanoAccount: Account;
 
     @ApiProperty({
         type: String,

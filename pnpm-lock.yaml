@@ -21,11 +21,11 @@ importers:
         specifier: ^0.0.5
         version: 0.0.5
       '@hydra-sdk/core':
-        specifier: ^1.0.5
-        version: 1.0.5
+        specifier: ^1.1.0
+        version: 1.1.0
       '@hydra-sdk/transaction':
-        specifier: ^1.0.7
-        version: 1.0.7
+        specifier: ^1.1.0
+        version: 1.1.0
       '@keyv/redis':
         specifier: ^4.3.2
         version: 4.3.2
@@ -456,12 +456,12 @@ packages:
     resolution: {integrity: sha512-UeNKoug4elkpjniu8WnaXIzH/Kc3Paap6EHVSABM0/AK3l1ByckB9U5dURUEfBdfc8wajjOm2KxQ4d/0CWH+tA==}
     engines: {node: '>=18'}
 
-  '@hydra-sdk/core@1.0.5':
-    resolution: {integrity: sha512-hTy5btXjkRAV6ELLo1FeVPU1mdeCLhAjGJc356rnrbMRFvrSoHsmEODR2iSlxAWrKIhG4b6exq6MDEqBZZWGZA==}
+  '@hydra-sdk/core@1.1.0':
+    resolution: {integrity: sha512-kMaNX8Cw8IWnwRfUahW3jMzncyWVKUwWBkCQy+kNFDL0m12J3TWl+M85ZjrZNRR8oMqEtPTiJu2jR7IigL1hyg==}
     engines: {node: '>=10'}
 
-  '@hydra-sdk/transaction@1.0.7':
-    resolution: {integrity: sha512-a1ihrT/Pf8UNxhOB/LLbNntQeOXMNuvTCCo4/sl//sZaH7fr8+C458BVzO1rjy+FlZPos6FbPmPTpVu8ZjooJg==}
+  '@hydra-sdk/transaction@1.1.0':
+    resolution: {integrity: sha512-NSbf1D6XInJEx/ilX57JNKM0Igs2qX7kAYYOy+QY+K0KReCB+L7lnchCgdSp/ONQ4eEXBqiWqcImRv4o0rkALQ==}
     engines: {node: '>=10'}
 
   '@isaacs/cliui@8.0.2':
@@ -1247,6 +1247,9 @@ packages:
 
   axios@1.7.9:
     resolution: {integrity: sha512-LhLcE7Hbiryz8oMDdDptSrWowmB4Bl6RCt6sIJKpRB4XtVf0iEgewX3au/pJqm+Py1kCASkb/FFKjxQaLtxJvw==}
+
+  axios@1.9.0:
+    resolution: {integrity: sha512-re4CqKTJaURpzbLHtIi6XpDv20/CnpXOtjRY5/CU32L8gU8ek9UIivcfvSWvmKEngmVbrUtPpdDwWDWL7DNHvg==}
 
   babel-jest@29.7.0:
     resolution: {integrity: sha512-BrvGY3xZSwEcCzKvKsCi2GgHqDqsYkOP4/by5xCgIwGXQxIEh+8ew3gmrE1y7XRR6LHZIj6yLYnUi/mm2KXKBg==}
@@ -4343,19 +4346,24 @@ snapshots:
       '@emurgo/cardano-serialization-lib-browser': 14.1.2
       '@emurgo/cardano-serialization-lib-nodejs': 14.1.2
 
-  '@hydra-sdk/core@1.0.5':
+  '@hydra-sdk/core@1.1.0':
     dependencies:
       '@hydra-sdk/cardano-wasm': 0.0.5
       '@scure/base': 1.2.6
+      axios: 1.9.0
       bip39: 3.1.0
+    transitivePeerDependencies:
+      - debug
 
-  '@hydra-sdk/transaction@1.0.7':
+  '@hydra-sdk/transaction@1.1.0':
     dependencies:
       '@hydra-sdk/cardano-wasm': 0.0.5
-      '@hydra-sdk/core': 1.0.5
+      '@hydra-sdk/core': 1.1.0
       '@scure/base': 1.2.6
       bip39: 3.1.0
       json-bigint: 1.0.0
+    transitivePeerDependencies:
+      - debug
 
   '@isaacs/cliui@8.0.2':
     dependencies:
@@ -5344,6 +5352,14 @@ snapshots:
       - debug
 
   axios@1.7.9:
+    dependencies:
+      follow-redirects: 1.15.9(debug@4.4.0)
+      form-data: 4.0.1
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+
+  axios@1.9.0:
     dependencies:
       follow-redirects: 1.15.9(debug@4.4.0)
       form-data: 4.0.1
