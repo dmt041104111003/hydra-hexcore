@@ -1,7 +1,8 @@
-import { INestApplication, ValidationPipe } from "@nestjs/common";
-import { Test, TestingModule } from "@nestjs/testing";
-import { AppModule } from "../src/app.module";
-import { DataSource } from "typeorm";
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { AppModule } from '../src/app.module';
+import { DataSource } from 'typeorm';
+
 
 /**
  * Setup shared test application (Full App)

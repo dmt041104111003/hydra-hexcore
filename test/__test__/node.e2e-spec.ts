@@ -274,7 +274,7 @@ describe('Hydra Node Management (e2e)', () => {
             const response = await request(app.getHttpServer())
                 .get('/hydra-main/hydra-node/99999');
 
-            expect(response.status).toBe(500);
+            expect(response.status).toBe(400);
         });
 
         it('should fail to get node with non-numeric id', async () => {

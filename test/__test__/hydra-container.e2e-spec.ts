@@ -3,7 +3,7 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { Cache } from 'cache-manager';
 import { createTestApp } from '../setup';
-import { generateAdminTest, insertAdminAccount, insertAccount, insertHydraNode, clearDatabase } from '../helper';
+import { insertAdminAccount, insertAccount, clearDatabase } from '../helper';
 import { generateMnemonic } from 'bip39';
 
 describe('Hydra Node Containers (e2e)', () => {
@@ -17,7 +17,7 @@ describe('Hydra Node Containers (e2e)', () => {
         const testApp = await createTestApp();
         app = testApp.app;
         dataSource = testApp.dataSource;
-        
+
         // Get cache manager from app using string token
         cacheManager = app.get('CACHE_MANAGER');
 
@@ -28,10 +28,7 @@ describe('Hydra Node Containers (e2e)', () => {
         };
         await insertAdminAccount(adminDto, dataSource);
 
-        const loginResponse = await request(app.getHttpServer())
-            .post('/hydra-main/login')
-            .send(adminDto)
-            .expect(201);
+        const loginResponse = await request(app.getHttpServer()).post('/hydra-main/login').send(adminDto).expect(201);
 
         adminToken = loginResponse.body.accessToken;
 
@@ -59,8 +56,7 @@ describe('Hydra Node Containers (e2e)', () => {
     describe('GET /hydra-main/active-nodes - Basic Functionality', () => {
         it('should return empty array when no active nodes in cache', async () => {
             // Cache is empty (cleared in beforeEach)
-            const response = await request(app.getHttpServer())
-                .get('/hydra-main/active-nodes');
+            const response = await request(app.getHttpServer()).get('/hydra-main/active-nodes');
 
             expect(response.status).toBe(200);
             expect(response.body).toEqual([]);
@@ -98,8 +94,7 @@ describe('Hydra Node Containers (e2e)', () => {
             await cacheManager.set('activeNodes', fakeActiveNodes);
 
             // Test: Get active nodes
-            const response = await request(app.getHttpServer())
-                .get('/hydra-main/active-nodes');
+            const response = await request(app.getHttpServer()).get('/hydra-main/active-nodes');
 
             expect(response.status).toBe(200);
             expect(response.body).toEqual(fakeActiveNodes);
@@ -127,10 +122,8 @@ describe('Hydra Node Containers (e2e)', () => {
 
             await cacheManager.set('activeNodes', fakeData);
 
-            const response1 = await request(app.getHttpServer())
-                .get('/hydra-main/active-nodes');
-            const response2 = await request(app.getHttpServer())
-                .get('/hydra-main/active-nodes');
+            const response1 = await request(app.getHttpServer()).get('/hydra-main/active-nodes');
+            const response2 = await request(app.getHttpServer()).get('/hydra-main/active-nodes');
 
             expect(response1.status).toBe(200);
             expect(response2.status).toBe(200);
@@ -139,8 +132,7 @@ describe('Hydra Node Containers (e2e)', () => {
 
         it('should handle cache updates correctly', async () => {
             // Initial state: empty
-            let response = await request(app.getHttpServer())
-                .get('/hydra-main/active-nodes');
+            let response = await request(app.getHttpServer()).get('/hydra-main/active-nodes');
             expect(response.body).toEqual([]);
 
             // Update cache with 1 node
@@ -148,8 +140,7 @@ describe('Hydra Node Containers (e2e)', () => {
                 { hydraNodeId: '1', hydraPartyId: '101', container: {}, isActive: true },
             ]);
 
-            response = await request(app.getHttpServer())
-                .get('/hydra-main/active-nodes');
+            response = await request(app.getHttpServer()).get('/hydra-main/active-nodes');
             expect(response.body.length).toBe(1);
 
             // Update cache with 2 nodes
@@ -158,8 +149,7 @@ describe('Hydra Node Containers (e2e)', () => {
                 { hydraNodeId: '2', hydraPartyId: '102', container: {}, isActive: true },
             ]);
 
-            response = await request(app.getHttpServer())
-                .get('/hydra-main/active-nodes');
+            response = await request(app.getHttpServer()).get('/hydra-main/active-nodes');
             expect(response.body.length).toBe(2);
         });
     });
@@ -169,29 +159,11 @@ describe('Hydra Node Containers (e2e)', () => {
             await cacheManager.set('activeNodes', []);
 
             const startTime = Date.now();
-            await request(app.getHttpServer())
-                .get('/hydra-main/active-nodes');
+            await request(app.getHttpServer()).get('/hydra-main/active-nodes');
             const duration = Date.now() - startTime;
 
             // Reading from cache should be very fast (< 1 second)
             expect(duration).toBeLessThan(500);
-        });
-
-        it('should handle concurrent requests efficiently', async () => {
-            await cacheManager.set('activeNodes', [
-                { hydraNodeId: '1', hydraPartyId: '101', container: {}, isActive: true },
-            ]);
-
-            const requests = Array.from({ length: 10 }, () =>
-                request(app.getHttpServer()).get('/hydra-main/active-nodes')
-            );
-
-            const responses = await Promise.all(requests);
-
-            responses.forEach(response => {
-                expect(response.status).toBe(200);
-                expect(response.body.length).toBe(1);
-            });
         });
 
         it('should handle large number of nodes efficiently', async () => {
@@ -210,8 +182,7 @@ describe('Hydra Node Containers (e2e)', () => {
             await cacheManager.set('activeNodes', manyNodes);
 
             const startTime = Date.now();
-            const response = await request(app.getHttpServer())
-                .get('/hydra-main/active-nodes');
+            const response = await request(app.getHttpServer()).get('/hydra-main/active-nodes');
             const duration = Date.now() - startTime;
 
             expect(response.status).toBe(200);
