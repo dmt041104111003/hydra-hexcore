@@ -19,4 +19,20 @@ module.exports = {
 
     // Setup files to load .env.test
     setupFilesAfterEnv: ['<rootDir>/tests/jest.setup.ts'],
+
+    // JUnit reporter for CI
+    reporters: [
+        'default',
+        [
+            'jest-junit',
+            {
+                outputDirectory: '.',
+                outputName: 'junit.xml',
+                classNameTemplate: '{classname}',
+                titleTemplate: '{title}',
+                ancestorSeparator: ' › ',
+                usePathForSuiteName: 'true',
+            },
+        ],
+    ],
 };
