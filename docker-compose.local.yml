@@ -1,4 +1,4 @@
-# Docker Compose cho Hydra Hexcore trên Windows
+# Docker Compose cho Hydra Hexcore trên Windows/WSL
 # Chạy: docker-compose -f docker-compose.local.yml up -d
 
 services:
@@ -35,7 +35,7 @@ services:
     image: ghcr.io/intersectmbo/cardano-node:10.2.1
     container_name: cardano-node
     environment:
-      - CARDANO_NODE_SOCKET_PATH=/workspace/node.socket
+      - CARDANO_NODE_SOCKET_PATH=/ipc/node.socket
     volumes:
       - cardano_db:/db
       - ./configs/cardano:/workspace
@@ -85,8 +85,9 @@ services:
         condition: service_started
     volumes:
       - ./database:/database
-      - ./hydra-data:/hydra
-      - cardano_ipc:/cardano-node
+      - hydra_data:/hydra
+      - ./configs/cardano:/workspace
+      - cardano_ipc:/ipc
       - //var/run/docker.sock:/var/run/docker.sock
     ports:
       - "3010:3010"
@@ -109,12 +110,16 @@ services:
       # Hydra
       NEST_HYDRA_BIN_DIR_PATH: /hydra/bin
       NEST_HYDRA_NODE_FOLDER: /hydra/preprod
-      NEST_HYDRA_NODE_IMAGE: ghcr.io/cardano-scaling/hydra-node:0.20.0
+      # Host path for Docker-in-Docker bind mounts (named volume)
+      NEST_HYDRA_NODE_HOST_FOLDER: hydra-hexcore_hydra_data
+      NEST_HYDRA_NODE_IMAGE: ghcr.io/cardano-scaling/hydra-node:0.21.0
+      # Hydra 0.21.0 published scripts (3 txIds)
+      NEST_HYDRA_NODE_SCRIPT_TX_ID: "f61b41b345349a65ff3410cd4f5265ed7932297261a9b1197296d4f628c07931,96f9f3d61e478846b8e617157216aa79cf32204b70b7fd7e6c617c7b05315e76,b9b4cece7cc7069ccdfb50a88a4928f594e081dab561a014e28fa19781346395"
       # Cardano
       NEST_CARDANO_NODE_SERVICE_NAME: cardano-node
       NEST_CARDANO_NODE_IMAGE: ghcr.io/intersectmbo/cardano-node:10.2.1
-      NEST_CARDANO_NODE_FOLDER: /cardano-node
-      NEST_CARDANO_NODE_SOCKER_PATH: /cardano-node/node.socket
+      NEST_CARDANO_NODE_FOLDER: /workspace
+      NEST_CARDANO_NODE_SOCKET_PATH: /ipc/node.socket
       # Docker
       NEST_DOCKER_SOCKET_PATH: /var/run/docker.sock
       NEST_DOCKER_ENABLE_NETWORK_HOST: "true"
@@ -128,4 +133,5 @@ volumes:
     driver: local
   cardano_ipc:
     driver: local
-
+  hydra_data:
+    driver: local

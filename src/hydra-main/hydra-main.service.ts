@@ -61,6 +61,8 @@ export class HydraMainService implements OnModuleInit {
             process.env.NEST_CARDANO_NODE_SOCKET_PATH || 'D:/Projects/Vtechcom/cardano-node/node.socket',
         hydraNodeImage: process.env.NEST_HYDRA_NODE_IMAGE || 'ghcr.io/cardano-scaling/hydra-node:0.20.0',
         hydraNodeFolder: process.env.NEST_HYDRA_NODE_FOLDER || 'D:/Projects/Vtechcom/cardano-node/hydra/preprod',
+        // Host path for Docker-in-Docker bind mounts
+        hydraNodeHostFolder: process.env.NEST_HYDRA_NODE_HOST_FOLDER || process.env.NEST_HYDRA_NODE_FOLDER || '/hydra/preprod',
         hydraNodeScriptTxId: process.env.NEST_HYDRA_NODE_SCRIPT_TX_ID || '',
         hydraNodeNetworkId: process.env.NEST_HYDRA_NODE_NETWORK_ID || '1',
         cardanoAccountMinLovelace: process.env.ACCOUNT_MINT_LOVELACE || 50000000, // 50 ADA
@@ -148,7 +150,7 @@ export class HydraMainService implements OnModuleInit {
                     '--topology',
                     '/workspace/topology.json',
                     '--socket-path',
-                    '/workspace/node.socket',
+                    '/ipc/node.socket',
                     '--database-path',
                     '/db',
                     '--port',
@@ -171,7 +173,7 @@ export class HydraMainService implements OnModuleInit {
             'query',
             'tip',
             `--socket-path`,
-            `/workspace/node.socket`,
+            `/ipc/node.socket`,
             '--testnet-magic',
             '1',
         ]);
@@ -635,14 +637,14 @@ export class HydraMainService implements OnModuleInit {
             dir: `/workspace`,
             era: '',
             network: '1',
-            socketPath: '/workspace/node.socket',
+            socketPath: '/ipc/node.socket',
             shelleyGenesis: '/workspace/shelley-genesis.json',
         });
         const output = await cardanoCli.runCommand({
             command: 'query',
             subcommand: 'protocol-parameters',
             parameters: [
-                { name: 'socket-path', value: '/workspace/node.socket' },
+                { name: 'socket-path', value: '/ipc/node.socket' },
                 { name: 'testnet-magic', value: '1' },
             ],
         });
@@ -717,9 +719,9 @@ export class HydraMainService implements OnModuleInit {
                         '--peer',
                         `${nodeName}:${peerNode.port + 1000}`,
                         `--hydra-verification-key`,
-                        `/data/party-${party.id}/${nodeName}.vk`,
+                        `/data/preprod/party-${party.id}/${nodeName}.vk`,
                         `--cardano-verification-key`,
-                        `/data/party-${party.id}/${nodeName}.cardano.vk`,
+                        `/data/preprod/party-${party.id}/${nodeName}.cardano.vk`,
                     ];
                 })
                 .flat();
@@ -730,28 +732,24 @@ export class HydraMainService implements OnModuleInit {
                 Cmd: [
                     '--node-id', `${nodeName}`,
                     '--listen', `0.0.0.0:${node.port + 1000}`,
-                    '--advertise', `${nodeName}:${node.port + 1000}`, 
-                    '--hydra-signing-key', `/data/party-${party.id}/${nodeName}.sk`,
-                    '--persistence-dir', `/data${resolvePersistenceDir(party.id, nodeName)}`,
+                    ...peerNodeParams,
                     '--api-host', '0.0.0.0',
                     '--api-port', `${node.port}`,
-                    ...peerNodeParams,
-                    '--cardano-signing-key', `/data/party-${party.id}/${nodeName}.cardano.sk`,
-                    '--hydra-scripts-tx-id', `${this.CONSTANTS.hydraNodeScriptTxId}`,
-                    '--persistence-rotate-after', '15000', // 15_000 seq
-
-                    '--deposit-period', `120s`,
-                    '--contestation-period', `60s`,
-                    
+                    '--hydra-signing-key', `/data/preprod/party-${party.id}/${nodeName}.sk`,
+                    '--persistence-dir', `/data/preprod/party-${party.id}/persistence-${nodeName}`,
                     '--testnet-magic', `${this.CONSTANTS.hydraNodeNetworkId}`,
-                    '--node-socket', `/cardano-node/node.socket`,
-                    '--ledger-protocol-parameters', `/data/party-${party.id}/protocol-parameters.json`,
+                    '--node-socket', `/ipc/node.socket`,
+                    // Hydra 0.21+ accepts comma-separated txIds in single argument
+                    '--hydra-scripts-tx-id', `${this.CONSTANTS.hydraNodeScriptTxId}`,
+                    '--cardano-signing-key', `/data/preprod/party-${party.id}/${nodeName}.cardano.sk`,
+                    '--contestation-period', `60`,
+                    '--ledger-protocol-parameters', `/data/preprod/party-${party.id}/protocol-parameters.json`,
                 ],
                 HostConfig: {
                     NetworkMode: 'hydra-network',
                     Binds: [
-                        `${this.CONSTANTS.hydraNodeFolder}:/data`,
-                        `${this.CONSTANTS.cardanoNodeFolder}:/cardano-node`,
+                        `${this.CONSTANTS.hydraNodeHostFolder}:/data`,
+                        `hydra-hexcore_cardano_ipc:/ipc`,
                     ],
                     PortBindings: {
                         [`${node.port}/tcp`]: [{ HostPort: `${node.port}` }],

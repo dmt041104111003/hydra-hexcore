@@ -336,3 +336,256 @@ curl -s http://localhost:1337/health | jq '.networkSynchronization' | grep -q "1
 echo "🎉 Sẵn sàng! Mở http://localhost:3010/api-docs để bắt đầu"
 ```
 
+---
+
+## 🎯 Chạy Hydra Node - Flow hoàn chỉnh
+
+> **Yêu cầu:** Cardano Node đã sync 100% (`networkSynchronization: 1`)
+
+### Bước 1: Tạo Admin User (chỉ lần đầu)
+
+```bash
+# Tạo admin user trong database
+docker exec -it hexcore-mysql mysql -u hexcore -phexcore123 hexcore -e "
+  INSERT INTO user (username, password, role) 
+  VALUES ('admin', '123456', 'admin') 
+  ON DUPLICATE KEY UPDATE password='123456';
+"
+```
+
+### Bước 2: Đăng nhập lấy Token
+
+```bash
+# Login để lấy JWT token
+curl -X POST http://localhost:3010/hydra-main/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "123456"}'
+
+# Kết quả: {"data":{"accessToken":"eyJhbGci..."},"statusCode":201,...}
+
+# Lưu token vào biến (copy accessToken từ kết quả trên)
+TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### Bước 3: Tạo Cardano Account
+
+```bash
+# Tạo account với mnemonic (24 words)
+curl -X POST http://localhost:3010/hydra-main/create-account \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "mnemonic": "your 24 word mnemonic phrase here..."
+  }'
+
+# Kết quả: {"data":{"baseAddress":"addr_test1...","id":1,...},...}
+
+# Kiểm tra danh sách accounts
+curl -H "Authorization: Bearer $TOKEN" http://localhost:3010/hydra-main/list-account
+```
+
+### Bước 4: Tạo Hydra Party
+
+```bash
+# Tạo party với 1 node, sử dụng account id=1
+curl -X POST http://localhost:3010/hydra-main/create-party \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "nodes": 1,
+    "cardanoAccountIds": [1]
+  }'
+
+# Kết quả: {"data":{"id":1,"nodes":[...],"status":"INACTIVE",...},...}
+
+# Kiểm tra danh sách parties
+curl http://localhost:3010/hydra-main/list-party
+```
+
+### Bước 5: Kích hoạt Party (Chạy Hydra Node)
+
+```bash
+# Activate party để khởi động Hydra Node
+curl -X POST http://localhost:3010/hydra-main/active-party \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"id": 1}'
+
+# Kết quả: {"data":{"id":1,"status":"ACTIVE",...},"statusCode":201,...}
+```
+
+### Bước 6: Verify Hydra Node đang chạy
+
+```bash
+# Kiểm tra container
+docker ps | grep hydra-node
+
+# Kết quả mong đợi:
+# hexcore-hydra-node-2   ghcr.io/cardano-scaling/hydra-node:0.21.0   Up   0.0.0.0:10005->10005/tcp
+
+# Kiểm tra logs
+docker logs hexcore-hydra-node-2 --tail=20
+
+# Kiểm tra Hydra Node API
+curl -s http://localhost:10005/protocol-parameters | head -c 200
+
+# Kiểm tra Party status
+curl http://localhost:3010/hydra-main/list-party | jq '.data[0].status'
+# Kết quả: "ACTIVE"
+```
+
+### 🎉 Hoàn tất! Hydra Node Endpoints
+
+| Endpoint | URL | Mô tả |
+|----------|-----|-------|
+| **Hydra API (HTTP)** | http://localhost:10005 | REST API |
+| **Hydra API (WebSocket)** | ws://localhost:10005 | Real-time events |
+| **Hydra P2P** | localhost:11005 | Peer-to-peer |
+
+---
+
+## 📋 Script tự động - Copy & Paste
+
+### Script 1: Setup Admin + Login (chạy 1 lần)
+
+```bash
+#!/bin/bash
+# === SETUP ADMIN ===
+
+# 1. Tạo admin user
+docker exec -it hexcore-mysql mysql -u hexcore -phexcore123 hexcore -e "
+  INSERT INTO user (username, password, role) 
+  VALUES ('admin', '123456', 'admin') 
+  ON DUPLICATE KEY UPDATE password='123456';
+"
+
+# 2. Login lấy token
+RESPONSE=$(curl -s -X POST http://localhost:3010/hydra-main/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "123456"}')
+
+TOKEN=$(echo $RESPONSE | jq -r '.data.accessToken')
+echo "TOKEN=$TOKEN"
+echo ""
+echo "✅ Copy dòng trên để sử dụng trong các bước tiếp theo"
+```
+
+### Script 2: Tạo Account + Party + Activate
+
+```bash
+#!/bin/bash
+# === TẠO VÀ CHẠY HYDRA NODE ===
+
+# Thay YOUR_TOKEN bằng token từ Script 1
+TOKEN="YOUR_TOKEN_HERE"
+
+# Thay YOUR_MNEMONIC bằng 24 từ mnemonic của bạn
+MNEMONIC="word1 word2 word3 ... word24"
+
+echo "=== 1. Tạo Cardano Account ==="
+curl -X POST http://localhost:3010/hydra-main/create-account \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d "{\"mnemonic\": \"$MNEMONIC\"}"
+echo ""
+
+sleep 2
+
+echo "=== 2. Tạo Hydra Party ==="
+curl -X POST http://localhost:3010/hydra-main/create-party \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"nodes": 1, "cardanoAccountIds": [1]}'
+echo ""
+
+sleep 2
+
+echo "=== 3. Activate Party ==="
+curl -X POST http://localhost:3010/hydra-main/active-party \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"id": 1}'
+echo ""
+
+sleep 5
+
+echo "=== 4. Verify ==="
+docker ps | grep hydra-node
+echo ""
+curl http://localhost:3010/hydra-main/list-party | jq '.data[0].status'
+echo ""
+echo "🎉 Hydra Node đang chạy tại http://localhost:10005"
+```
+
+### Script 3: Deactivate Party (Dừng Hydra Node)
+
+```bash
+#!/bin/bash
+TOKEN="YOUR_TOKEN_HERE"
+
+curl -X POST http://localhost:3010/hydra-main/deactive-party \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"id": 1}'
+
+echo ""
+echo "✅ Party đã được deactivate, Hydra Node đã dừng"
+```
+
+---
+
+## 🔧 Troubleshooting Hydra Node
+
+### Lỗi "Invalid option --hydra-scripts-tx-id"
+
+**Nguyên nhân:** Hydra Node CLI không chấp nhận multiple `--hydra-scripts-tx-id` flags.
+
+**Cách fix:** Sử dụng comma-separated format trong một argument:
+```yaml
+# docker-compose.local.yml
+NEST_HYDRA_NODE_SCRIPT_TX_ID: "txId1,txId2,txId3"
+```
+
+### Lỗi "MissingScript"
+
+**Nguyên nhân:** TxId của Hydra scripts không đúng hoặc chưa publish.
+
+**Cách fix:** Publish scripts mới:
+```bash
+docker run --rm \
+  -v hydra-hexcore_cardano_ipc:/ipc \
+  -v "$(pwd)/hydra-data/preprod/party-1:/keys" \
+  ghcr.io/cardano-scaling/hydra-node:0.21.0 \
+  publish-scripts \
+  --testnet-magic 1 \
+  --node-socket /ipc/node.socket \
+  --cardano-signing-key /keys/hexcore-hydra-node-2.cardano.sk
+
+# Output: txId1,txId2,txId3
+# Cập nhật vào NEST_HYDRA_NODE_SCRIPT_TX_ID
+```
+
+### Lỗi "network hydra-network not found"
+
+**Cách fix:**
+```bash
+docker network create hydra-network
+```
+
+### Kiểm tra Hydra Node logs
+
+```bash
+# Xem logs realtime
+docker logs -f hexcore-hydra-node-2
+
+# Xem 50 dòng cuối
+docker logs hexcore-hydra-node-2 --tail=50
+```
+
+---
+
+## 📚 Tham khảo thêm
+
+- [Hydra Documentation](https://hydra.family/head-protocol/)
+- [Hydra SDK](https://github.com/Vtechcom/hydra-sdk)
+- [Swagger API Docs](http://localhost:3010/api-docs)

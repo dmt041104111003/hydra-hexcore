@@ -1,7 +1,8 @@
 # Use the official Node.js 22 Alpine image as the base image
 FROM node:22-alpine
 
-# Install pnpm
+# Install Docker CLI and pnpm
+RUN apk add --no-cache docker-cli
 RUN npm install -g pnpm
 
 # Set the working directory inside the container
