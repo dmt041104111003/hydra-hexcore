@@ -4,7 +4,9 @@
 /build
 /database
 /hydra
+/hydra-data
 /cardano-node
+configs/cardano/database/
 package-log.json
 yarn.lock
 

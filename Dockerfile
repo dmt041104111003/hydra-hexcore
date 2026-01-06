@@ -1,23 +1,29 @@
-# Use the official Node.js 20 Alpine image as the base image
+# Use the official Node.js 22 Alpine image as the base image
 FROM node:22-alpine
+
+# Install pnpm
+RUN npm install -g pnpm
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy the package.json and package-lock.json files to the working directory
-COPY package*.json ./
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
 
-# Install the project dependencies
-RUN npm install 
+# Install dependencies (skip native modules that need compilation)
+RUN pnpm install --ignore-scripts
 
-# Copy the source code to the working directory
+# Copy the source code
 COPY . .
 
 # Build the project
-RUN npm run build
+RUN pnpm run build
 
-# Expose the port on which the application will run
-EXPOSE 3000
+# Verify dist folder exists
+RUN ls -la dist/
 
-# Set the command to run the application
-CMD ["npm", "run start:prod"]
+# Expose the port
+EXPOSE 3010
+
+# Start the application
+CMD ["node", "dist/src/main.js"]

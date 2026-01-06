@@ -1,0 +1,131 @@
+# Docker Compose cho Hydra Hexcore trên Windows
+# Chạy: docker-compose -f docker-compose.local.yml up -d
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: hexcore-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: hexcore123
+      MYSQL_DATABASE: hexcore
+      MYSQL_USER: hexcore
+      MYSQL_PASSWORD: hexcore123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: hexcore-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # Cardano Node (preprod)
+  cardano-node:
+    image: ghcr.io/intersectmbo/cardano-node:10.2.1
+    container_name: cardano-node
+    environment:
+      - CARDANO_NODE_SOCKET_PATH=/workspace/node.socket
+    volumes:
+      - cardano_db:/db
+      - ./configs/cardano:/workspace
+      - cardano_ipc:/ipc
+    ports:
+      - "8091:8091"
+    command: >
+      run 
+      --config /workspace/config.json 
+      --topology /workspace/topology.json 
+      --socket-path /ipc/node.socket 
+      --database-path /db 
+      --port 8091 
+      --host-addr 0.0.0.0
+    restart: unless-stopped
+
+  # Ogmios (Cardano API)
+  ogmios:
+    image: cardanosolutions/ogmios:latest
+    container_name: ogmios
+    depends_on:
+      - cardano-node
+    ports:
+      - "1337:1337"
+    volumes:
+      - cardano_ipc:/ipc
+      - ./configs/cardano:/config
+    command: 
+      - "--node-socket"
+      - "/ipc/node.socket"
+      - "--node-config"
+      - "/config/config.json"
+      - "--host"
+      - "0.0.0.0"
+    restart: unless-stopped
+
+  # Hydra Hexcore API
+  hydra-hexcore:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hydra-hexcore
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./database:/database
+      - ./hydra-data:/hydra
+      - cardano_ipc:/cardano-node
+      - //var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "3010:3010"
+    environment:
+      NODE_ENV: development
+      PORT: 3010
+      # Database
+      DB_TYPE: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: hexcore
+      DB_PASSWORD: hexcore123
+      DB_DATABASE: hexcore
+      DB_SYNCHRONIZE: "true"
+      # Redis
+      REDIS_URL: redis://redis:6379
+      # Ogmios
+      NEST_OGMIOS_HOST: ogmios
+      NEST_OGMIOS_PORT: 1337
+      # Hydra
+      NEST_HYDRA_BIN_DIR_PATH: /hydra/bin
+      NEST_HYDRA_NODE_FOLDER: /hydra/preprod
+      NEST_HYDRA_NODE_IMAGE: ghcr.io/cardano-scaling/hydra-node:0.20.0
+      # Cardano
+      NEST_CARDANO_NODE_SERVICE_NAME: cardano-node
+      NEST_CARDANO_NODE_IMAGE: ghcr.io/intersectmbo/cardano-node:10.2.1
+      NEST_CARDANO_NODE_FOLDER: /cardano-node
+      NEST_CARDANO_NODE_SOCKER_PATH: /cardano-node/node.socket
+      # Docker
+      NEST_DOCKER_SOCKET_PATH: /var/run/docker.sock
+      NEST_DOCKER_ENABLE_NETWORK_HOST: "true"
+    command: ["node", "dist/src/main.js"]
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    driver: local
+  cardano_db:
+    driver: local
+  cardano_ipc:
+    driver: local
+
